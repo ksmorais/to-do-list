@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Cadastro - To-Do List</title>
+  <link rel="stylesheet" href="style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="container">
+    <h2>Cadastro</h2>
+    <input type="text" id="nome" placeholder="Nome" autocomplete="name"> <!-- Adicionado autocomplete -->
+    <input type="email" id="email" placeholder="Email" autocomplete="email"> <!-- Adicionado autocomplete -->
+    <input type="password" id="senha" placeholder="Senha" autocomplete="new-password"> <!-- Adicionado autocomplete -->
+    <button id="btn-cadastrar">Cadastrar</button>
+    <p>Já tem uma conta? <a href="login.html">Entrar</a></p>
+  </div>
+
+  <!-- Firebase SDK via CDN -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js";
+  import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-auth.js";
+  import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-firestore.js";
+
+  // Config do seu projeto (mesma do seu firebase.js)
+  const firebaseConfig = {
+    apiKey: "AIzaSyCDPcwUy7kueoeXJ4DV4mWb8ztFY91H6Ps",
+    authDomain: "to-do-list-5336f.firebaseapp.com",
+    databaseURL: "https://to-do-list-5336f-default-rtdb.firebaseio.com",
+    projectId: "to-do-list-5336f",
+    storageBucket: "to-do-list-5336f.firebasestorage.app",
+    messagingSenderId: "606660190964",
+    appId: "1:606660190964:web:181ec5e5dc4191ca8974a1",
+    measurementId: "G-VBQZ1NN020"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  const btn = document.getElementById("btn-cadastrar");
+
+  btn.addEventListener("click", async () => {
+    const nome = document.getElementById("nome").value;
+    const email = document.getElementById("email").value;
+    const senha = document.getElementById("senha").value;
+
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, email, senha);
+      const user = userCredential.user;
+
+      await setDoc(doc(db, "usuarios", user.uid), {
+        nome: nome,
+        email: email,
+        criadoEm: new Date()
+      });
+
+      alert("Cadastro realizado com sucesso! Faça login agora.");
+      window.location.href = "login.html";
+    } catch (error) {
+      alert("Erro ao cadastrar: " + error.message);
+    }
+  });
+</script>

@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Minhas Tarefas</title>
+  <link rel="stylesheet" href="style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="container">
+    <h1>Minhas Tarefas</h1>
+
+    <div id="nova-tarefa">
+      <input type="text" id="tarefa-input" placeholder="Digite uma nova tarefa">
+      <button id="btn-adicionar">Adicionar</button>
+    </div>
+
+    <ul id="lista-tarefas"></ul>
+
+    <button id="logout-btn">Sair</button>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-auth.js";
+    import { getDatabase, ref, push, onValue, remove, update } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCDPcwUy7kueoeXJ4DV4mWb8ztFY91H6Ps",
+      authDomain: "to-do-list-5336f.firebaseapp.com",
+      databaseURL: "https://to-do-list-5336f-default-rtdb.firebaseio.com",
+      projectId: "to-do-list-5336f",
+      storageBucket: "to-do-list-5336f.firebasestorage.app",
+      messagingSenderId: "606660190964",
+      appId: "1:606660190964:web:181ec5e5dc4191ca8974a1",
+      measurementId: "G-VBQZ1NN020"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getDatabase(app);
+
+    const lista = document.getElementById("lista-tarefas");
+    const input = document.getElementById("tarefa-input");
+    const btnAdicionar = document.getElementById("btn-adicionar");
+    const btnLogout = document.getElementById("logout-btn");
+
+    let usuarioId = null;
+
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        usuarioId = user.uid;
+        carregarTarefas();
+      } else {
+        window.location.href = "login.html";
+      }
+    });
+
+    function adicionarTarefa() {
+      const texto = input.value.trim();
+      if (texto === "") return;
+
+      const tarefasRef = ref(db, `usuarios/${usuarioId}/tarefas`);
+      push(tarefasRef, {
+        texto,
+        concluida: false
+      });
+
+      input.value = "";
+    }
+
+    function carregarTarefas() {
+      const tarefasRef = ref(db, `usuarios/${usuarioId}/tarefas`);
+
+      onValue(tarefasRef, (snapshot) => {
+        lista.innerHTML = "";
+        snapshot.forEach((child) => {
+          const tarefa = child.val();
+          const key = child.key;
+
+          const li = document.createElement("li");
+          li.textContent = tarefa.texto;
+          li.style.textDecoration = tarefa.concluida ? "line-through" : "none";
+          li.classList.add("completed-animation");
+
+          li.addEventListener("click", () => {
+            const novaStatus = !tarefa.concluida;
+            update(ref(db, `usuarios/${usuarioId}/tarefas/${key}`), { concluida: novaStatus });
+          });
+
+          const btnRemover = document.createElement("button");
+          btnRemover.textContent = "X";
+          btnRemover.onclick = () => {
+            li.classList.add("remove-animation");
+            setTimeout(() => {
+              remove(ref(db, `usuarios/${usuarioId}/tarefas/${key}`));
+            }, 300);
+          };
+
+          li.appendChild(btnRemover);
+          lista.appendChild(li);
+        });
+      });
+    }
+
+    btnAdicionar.addEventListener("click", adicionarTarefa);
+
+    btnLogout.addEventListener("click", () => {
+      signOut(auth).then(() => {
+        alert("Logout realizado com sucesso!");
+        window.location.href = "login.html";
+      }).catch((error) => {
+        alert("Erro ao sair: " + error.message);
+      });
+    });
+  </script>
+</body>
+</html>
